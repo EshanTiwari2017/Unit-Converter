@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Eshan Unit Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+    h1 {
+      color: #333;
+    }
+    input, select, button {
+      padding: 8px;
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    #result {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #error {
+      color: red;
+      font-weight: bold;
+    }
+    .section {
+      background: white;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Eshan Unit Converter</h1>
+
+  <div class="section">
+    <h2>Login / Register</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <br>
+    <button onclick="register()">Register</button>
+    <button onclick="login()">Login</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="section">
+    <h2>Unit Converter</h2>
+    <select id="category" onchange="updateUnits()">
+      <option value="distance">Distance</option>
+      <option value="time">Time</option>
+      <option value="volume">Volume</option>
+      <option value="area">Area</option>
+      <option value="angle">Angle</option>
+      <option value="density">Density</option>
+    </select>
+    <br>
+    <input type="text" id="valueInput" placeholder="Enter value" />
+    <select id="fromUnit"></select>
+    to
+    <select id="toUnit"></select>
+    <br>
+    <button onclick="convertUnit()">Convert</button>
+    <div id="result"></div>
+    <div id="error"></div>
+  </div>
+
+  <div class="section">
+    <h2>Delete Account</h2>
+    <input type="text" id="deleteUsername" placeholder="Enter username to delete" />
+    <button onclick="startDelete()">Delete Account</button>
+    <div id="confirmDelete" style="display:none;">
+      Are you sure you want to delete this account?
+      <button onclick="confirmDelete(true)">Yes</button>
+      <button onclick="confirmDelete(false)">No</button>
+    </div>
+    <div id="deleteMessage"></div>
+  </div>
+
+  <script>
+    let currentUser = null;
+
+    const unitCategories = {
+      distance: { meter: 1, kilometer: 1000, mile: 1609.34, foot: 0.3048 },
+      time: { second: 1, minute: 60, hour: 3600, day: 86400 },
+      volume: { liter: 1, milliliter: 0.001, gallon: 3.78541, cubic_meter: 1000 },
+      area: { square_meter: 1, square_kilometer: 1e6, acre: 4046.86, hectare: 10000 },
+      angle: { degree: 1, radian: 57.2958 },
+      density: { kg_per_m3: 1, g_per_cm3: 1000, lb_per_ft3: 16.0185 }
+    };
+
+    function register() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      if (!username || !password) {
+        alert("Please enter username and password.");
+        return;
+      }
+      if (localStorage.getItem("user_" + username)) {
+        alert("Username already exists.");
+        return;
+      }
+      localStorage.setItem("user_" + username, password);
+      alert("Registered successfully!");
+    }
+
+    function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const storedPass = localStorage.getItem("user_" + username);
+      if (storedPass && storedPass === password) {
+        currentUser = username;
+        alert("Logged in as " + username);
+      } else {
+        alert("Invalid username or password.");
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      alert("Logged out.");
+    }
+
+    function updateUnits() {
+      const category = document.getElementById("category").value;
+      const fromUnitSelect = document.getElementById("fromUnit");
+      const toUnitSelect = document.getElementById("toUnit");
+      fromUnitSelect.innerHTML = "";
+      toUnitSelect.innerHTML = "";
+      for (const unit in unitCategories[category]) {
+        fromUnitSelect.innerHTML += `<option value="${unit}">${unit.replace(/_/g, " ")}</option>`;
+        toUnitSelect.innerHTML += `<option value="${unit}">${unit.replace(/_/g, " ")}</option>`;
+      }
+    }
+
+    function convertUnit() {
+      const resultDiv = document.getElementById("result");
+      const errorDiv = document.getElementById("error");
+      resultDiv.textContent = "";
+      errorDiv.textContent = "";
+      if (!currentUser) {
+        errorDiv.textContent = "You must log in before using the converter.";
+        return;
+      }
+      const category = document.getElementById("category").value;
+      const value = parseFloat(document.getElementById("valueInput").value);
+      const fromUnit = document.getElementById("fromUnit").value;
+      const toUnit = document.getElementById("toUnit").value;
+      if (isNaN(value)) {
+        errorDiv.textContent = "Please enter a valid number.";
+        return;
+      }
+      if (fromUnit === toUnit) {
+        resultDiv.textContent = "Both units are the same.";
+        return;
+      }
+      const baseValue = value * unitCategories[category][fromUnit];
+      const result = baseValue / unitCategories[category][toUnit];
+      resultDiv.textContent = `Result: ${result.toFixed(4)} ${toUnit.replace(/_/g, " ")}`;
+    }
+
+    function startDelete() {
+      const deleteUsername = document.getElementById("deleteUsername").value;
+      const deleteMessage = document.getElementById("deleteMessage");
+      const confirmBox = document.getElementById("confirmDelete");
+      deleteMessage.textContent = "";
+      if (!deleteUsername) {
+        deleteMessage.textContent = "Please enter a username.";
+        return;
+      }
+      if (!localStorage.getItem("user_" + deleteUsername)) {
+        deleteMessage.textContent = "User does not exist.";
+        return;
+      }
+      confirmBox.style.display = "block";
+    }
+
+    function confirmDelete(confirm) {
+      const deleteUsername = document.getElementById("deleteUsername").value;
+      const confirmBox = document.getElementById("confirmDelete");
+      const deleteMessage = document.getElementById("deleteMessage");
+      confirmBox.style.display = "none";
+      if (confirm) {
+        localStorage.removeItem("user_" + deleteUsername);
+        if (currentUser === deleteUsername) currentUser = null;
+        deleteMessage.textContent = "Account deleted.";
+      } else {
+        deleteMessage.textContent = "Account not deleted.";
+      }
+    }
+
+    // Initialize default units
+    updateUnits();
+  </script>
+</body>
+</html>
